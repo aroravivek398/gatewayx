@@ -1,3 +1,4 @@
+
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -44,6 +45,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: gatewayx_pass
       SPRING_DATA_REDIS_HOST: redis
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+	      JWT_SECRET: xpsPCz7NGRVNVn18u2WwB1kKzLAKk0GzUHtVi5DG+3Zf9CA+415b2fjtNYU5Sn/h
 
   app-2:
     build: .

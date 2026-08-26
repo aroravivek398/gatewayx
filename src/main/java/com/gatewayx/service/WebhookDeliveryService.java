@@ -47,6 +47,7 @@ public class WebhookDeliveryService {
                     .toBodilessEntity();
 
             delivery.setStatus(WebhookDeliveryStatus.DELIVERED);
+            delivery.setAttemptCount(delivery.getAttemptCount() + 1);
             delivery.setLastAttemptAt(LocalDateTime.now());
             webhookDeliveryRepository.save(delivery);
 
