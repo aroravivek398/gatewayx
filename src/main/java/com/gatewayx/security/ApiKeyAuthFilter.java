@@ -1,11 +1,12 @@
 package com.gatewayx.security;
 
 import com.gatewayx.entity.ApiKey;
-import com.gatewayx.entity.ApiKeyStatus;
+import com.gatewayx.entity.UsageAggregate;
 import com.gatewayx.kafka.UsageEventProducer;
 import com.gatewayx.ratelimit.RateLimitResult;
 import com.gatewayx.ratelimit.RateLimiterStrategy;
 import com.gatewayx.repository.ApiKeyRepository;
+import com.gatewayx.repository.UsageAggregateRepository;
 import com.gatewayx.util.ApiKeyGenerator;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static com.gatewayx.entity.ApiKeyStatus.REVOKED;
@@ -26,8 +28,8 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
 
     private final ApiKeyRepository apiKeyRepository;
     private final UsageEventProducer usageEventProducer;
-
     private final RateLimiterStrategy rateLimiterStrategy;
+    private final UsageAggregateRepository usageAggregateRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -70,6 +72,22 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
             );
             return;
         }
+
+        LocalDate periodStart = LocalDate.now().withDayOfMonth(1);
+        Optional<UsageAggregate> aggregateOpt = usageAggregateRepository
+                .findByApiKeyIdAndPeriodStart(apiKey.getId(), periodStart);
+
+        if (aggregateOpt.isPresent()) {
+            long currentUsage = aggregateOpt.get().getRequestCount();
+            long quota = apiKey.getPlan().getMonthlyQuota();
+            if (currentUsage >= quota) {
+                response.setStatus(429);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"QUOTA_EXCEEDED\"}");
+                return;
+            }
+        }
+
         usageEventProducer.publish(apiKey.getId(), path, 200);
         filterChain.doFilter(request, response);
     }
