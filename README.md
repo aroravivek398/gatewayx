@@ -3,7 +3,6 @@
 **API rate-limiting and developer platform** — built as a backend engineering portfolio project demonstrating distributed rate limiting, idempotency, async event processing, and reliable webhook delivery.
 
 
-📖 **Interactive API docs:** http://13.127.199.47:8081/swagger-ui/index.html
 
 ---
 
